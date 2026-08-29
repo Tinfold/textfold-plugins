@@ -49,8 +49,8 @@
       "about": "Inline suggestions from Copilot, and a chat panel",
       "version": "1.0.0",
       "url": "dist/copilot-1.0.0.tar.gz",
-      "sha256": "7e38c46eb3c30a39b9645ae86067eaef5530009512536074294fc8afcd168175",
-      "size": 9883,
+      "sha256": "e0a8b9aefce5a764c3625bdec55c5f9dd382c79f850dbe82806864f401cf3f76",
+      "size": 10304,
       "needs": [
         "python3",
         "npm",

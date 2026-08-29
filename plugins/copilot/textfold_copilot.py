@@ -169,6 +169,29 @@ class Copilot:
         self.asking = 0
         self.offer = None
 
+    def stop(self):
+        """Stop the language server this plugin started.
+
+        It is a separate operating-system process, and Python does not take
+        its children with it when it goes. A `node` left behind here is
+        reparented to init, keeps the quarter of a gigabyte Copilot's server
+        holds, and stays until the machine is restarted.
+
+        textfold puts every plugin in a process group of its own and kills the
+        group, so this is belt as well as braces — but a plugin that leaves
+        processes behind for the editor to sweep up is a plugin that has got
+        it wrong, and this is the one method that makes it right.
+        """
+        server, self.server = self.server, None
+        self.ready = False
+        if server is None:
+            return
+        server.terminate()
+        try:
+            server.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            server.kill()
+
     def start(self):
         if not os.path.exists(SERVER):
             self.status = "not installed"
@@ -513,93 +536,100 @@ def main():
         asked[next_id[0]] = what
         editor.send({"jsonrpc": "2.0", "id": next_id[0], "method": method, "params": params})
 
-    while True:
-        message = read_message(sys.stdin.buffer)
-        if message is None:
-            return
-        method = message.get("method")
-        request_id = message.get("id")
-        params = message.get("params") or {}
-
-        # An answer to something we asked the person.
-        if method is None and request_id in asked:
-            what = asked.pop(request_id)
-            answer = message.get("result")
-            if what == "chat" and answer:
-                try:
-                    chat.ask(answer)
-                except Busy as why:
-                    editor.say(str(why), kind="bad")
-            continue
-
-        try:
-            if method == "initialize":
-                root = params.get("root") or "."
-                settings = params.get("settings") or {}
-                command = (settings.get("chat") or {}).get("command") \
-                    or ["copilot", "-p"]
-                copilot = Copilot(editor, root)
-                chat = Chat(editor, command)
-                editor.answer(request_id, {"capabilities": {"hints": True, "panel": True}})
-                copilot.start()
-
-            elif method == "buffer/opened":
-                copilot.opened(params["path"], params.get("language", ""),
-                               params.get("version", 0), params.get("text", ""))
-            elif method == "buffer/changed":
-                copilot.changed(params["path"], params.get("version", 0),
-                                params.get("changes") or [])
-            elif method == "buffer/closed":
-                copilot.closed(params["path"])
-            elif method == "selection/changed":
-                copilot.suggest(params["path"], params["line"], params["column"])
-            elif method == "hint/taken":
-                copilot.taken()
-            elif method == "hint/dropped":
-                copilot.offer = None
-
-            elif method == "panel/opened":
-                chat.showing = True
-                chat.report()
-            elif method == "panel/closed":
-                chat.showing = False
-            elif method == "panel/key":
-                chat.key(params.get("key") or "", ask)
-
-            elif method == "command/run":
-                name = params.get("id")
-                if name == "copilot/sign-in":
-                    copilot.sign_in()
-                elif name == "copilot/status":
-                    copilot.check(loud=True)
-                elif name == "copilot/suggestions":
-                    copilot.on = not copilot.on
-                    editor.say(
-                        "copilot suggestions are on" if copilot.on
-                        else "copilot suggestions are off"
-                    )
-                else:
-                    raise Busy(f"no such command: {name}")
-                editor.answer(request_id)
-
-            elif method == "exit":
+    try:
+        while True:
+            message = read_message(sys.stdin.buffer)
+            if message is None:
                 return
-            elif request_id is not None:
-                editor.refuse(request_id, f"copilot plugin has no {method}")
+            method = message.get("method")
+            request_id = message.get("id")
+            params = message.get("params") or {}
 
-        except Busy as why:
-            if request_id is not None:
-                editor.refuse(request_id, str(why))
-            else:
-                editor.say(str(why), kind="bad")
-        except Exception as e:  # noqa: BLE001
-            # A plugin that dies takes its panel and its suggestions with it,
-            # and textfold will restart it three times and then leave it alone.
-            # Saying what went wrong is more use than falling over.
-            if request_id is not None:
-                editor.refuse(request_id, f"{type(e).__name__}: {e}")
-            else:
-                editor.say(f"copilot: {type(e).__name__}: {e}", kind="bad")
+            # An answer to something we asked the person.
+            if method is None and request_id in asked:
+                what = asked.pop(request_id)
+                answer = message.get("result")
+                if what == "chat" and answer:
+                    try:
+                        chat.ask(answer)
+                    except Busy as why:
+                        editor.say(str(why), kind="bad")
+                continue
+
+            try:
+                if method == "initialize":
+                    root = params.get("root") or "."
+                    settings = params.get("settings") or {}
+                    command = (settings.get("chat") or {}).get("command") \
+                        or ["copilot", "-p"]
+                    copilot = Copilot(editor, root)
+                    chat = Chat(editor, command)
+                    editor.answer(request_id, {"capabilities": {"hints": True, "panel": True}})
+                    copilot.start()
+
+                elif method == "buffer/opened":
+                    copilot.opened(params["path"], params.get("language", ""),
+                                   params.get("version", 0), params.get("text", ""))
+                elif method == "buffer/changed":
+                    copilot.changed(params["path"], params.get("version", 0),
+                                    params.get("changes") or [])
+                elif method == "buffer/closed":
+                    copilot.closed(params["path"])
+                elif method == "selection/changed":
+                    copilot.suggest(params["path"], params["line"], params["column"])
+                elif method == "hint/taken":
+                    copilot.taken()
+                elif method == "hint/dropped":
+                    copilot.offer = None
+
+                elif method == "panel/opened":
+                    chat.showing = True
+                    chat.report()
+                elif method == "panel/closed":
+                    chat.showing = False
+                elif method == "panel/key":
+                    chat.key(params.get("key") or "", ask)
+
+                elif method == "command/run":
+                    name = params.get("id")
+                    if name == "copilot/sign-in":
+                        copilot.sign_in()
+                    elif name == "copilot/status":
+                        copilot.check(loud=True)
+                    elif name == "copilot/suggestions":
+                        copilot.on = not copilot.on
+                        editor.say(
+                            "copilot suggestions are on" if copilot.on
+                            else "copilot suggestions are off"
+                        )
+                    else:
+                        raise Busy(f"no such command: {name}")
+                    editor.answer(request_id)
+
+                elif method == "exit":
+                    return
+                elif request_id is not None:
+                    editor.refuse(request_id, f"copilot plugin has no {method}")
+
+            except Busy as why:
+                if request_id is not None:
+                    editor.refuse(request_id, str(why))
+                else:
+                    editor.say(str(why), kind="bad")
+            except Exception as e:  # noqa: BLE001
+                # A plugin that dies takes its panel and its suggestions with it,
+                # and textfold will restart it three times and then leave it alone.
+                # Saying what went wrong is more use than falling over.
+                if request_id is not None:
+                    editor.refuse(request_id, f"{type(e).__name__}: {e}")
+                else:
+                    editor.say(f"copilot: {type(e).__name__}: {e}", kind="bad")
+    finally:
+        # Whatever happened — the editor went away, the loop returned, or
+        # something in here threw — the language server does not outlive
+        # the plugin that started it.
+        if copilot is not None:
+            copilot.stop()
 
 
 if __name__ == "__main__":
