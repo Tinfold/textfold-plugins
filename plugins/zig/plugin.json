@@ -1,0 +1,126 @@
+{
+  "id": "zig",
+  "version": "1.0.0",
+  "name": "Zig",
+  "about": "What Zig is, and its colours, from a grammar built on your machine",
+
+  "_about": [
+    "The worked example of a plugin that brings its own syntax highlighting.",
+    "textfold knows nothing about Zig; this is the whole of teaching it,",
+    "and none of it is a change to the editor.",
+    "",
+    "  textfold --install zig",
+    "",
+    "Two files do it. `highlights.scm` is published here and lands beside",
+    "this manifest when the plugin is installed. `zig.so` is not published:",
+    "it is a compiled shared library, it would have to be one per platform,",
+    "and building it is four lines of install steps — fetch the grammar's C,",
+    "compile it, throw the C away.",
+    "",
+    "`${plugin}` is the directory this has been installed to, which is how",
+    "the manifest names its own two files without knowing where that is.",
+    "",
+    "`needs` is a path rather than a program name. A bare name is looked up",
+    "on the PATH and has to be runnable; a path only has to be there, which",
+    "is what a shared library is — so the plugins list says `needs` until",
+    "the library has actually been built, rather than saying `on` beside a",
+    "language with no colours.",
+    "",
+    "There is no language server here. Adding zls is three more lines:",
+    "",
+    "  \"needs\": [\"zls\"],",
+    "  \"languages\": { \"zig\": { \"servers\": [",
+    "    { \"name\": \"zls\", \"command\": \"zls\", \"roots\": [\"build.zig\"] } ] } }",
+    "",
+    "but that is what the other fourteen plugins here are examples of, and",
+    "this one is about the grammar."
+  ],
+
+  "needs": ["${plugin}/zig.so"],
+  "see": "https://github.com/tree-sitter-grammars/tree-sitter-zig",
+
+  "install": [
+    {
+      "about": "somewhere to build it",
+      "run": ["mkdir", "-p", "${plugin}/build"],
+      "unless": "${plugin}/zig.so",
+      "os": ["linux", "macos"]
+    },
+    {
+      "about": "the Zig grammar's sources, from GitHub",
+      "run": [
+        "curl", "-fsSL",
+        "-o", "${plugin}/build/grammar.tar.gz",
+        "https://github.com/tree-sitter-grammars/tree-sitter-zig/archive/refs/tags/v1.1.2.tar.gz"
+      ],
+      "unless": "${plugin}/zig.so",
+      "os": ["linux", "macos"]
+    },
+    {
+      "about": "unpacking them",
+      "run": [
+        "tar", "-xzf", "${plugin}/build/grammar.tar.gz",
+        "-C", "${plugin}/build", "--strip-components=1"
+      ],
+      "when": "${plugin}/build/grammar.tar.gz",
+      "os": ["linux", "macos"]
+    },
+    {
+      "about": "compiling it, with its external scanner",
+      "run": [
+        "cc", "-shared", "-fPIC", "-O2",
+        "-I", "${plugin}/build/src",
+        "-o", "${plugin}/zig.so",
+        "${plugin}/build/src/parser.c",
+        "${plugin}/build/src/scanner.c"
+      ],
+      "when": "${plugin}/build/src/scanner.c",
+      "os": ["linux", "macos"]
+    },
+    {
+      "about": "compiling it",
+      "run": [
+        "cc", "-shared", "-fPIC", "-O2",
+        "-I", "${plugin}/build/src",
+        "-o", "${plugin}/zig.so",
+        "${plugin}/build/src/parser.c"
+      ],
+      "when": "${plugin}/build/src/parser.c",
+      "unless": "${plugin}/zig.so",
+      "os": ["linux", "macos"]
+    },
+    {
+      "about": "building it with the tree-sitter CLI instead",
+      "run": ["tree-sitter", "build", "-o", "${plugin}/zig.so", "${plugin}/build"],
+      "when": "${plugin}/build/src/parser.c",
+      "unless": "${plugin}/zig.so",
+      "os": ["linux", "macos"]
+    },
+    {
+      "about": "throwing the sources away",
+      "run": ["rm", "-rf", "${plugin}/build"],
+      "when": "${plugin}/build",
+      "os": ["linux", "macos"]
+    }
+  ],
+
+  "uninstall": [
+    {
+      "about": "the library it built",
+      "run": ["rm", "-rf", "${plugin}/zig.so", "${plugin}/build"],
+      "os": ["linux", "macos"]
+    }
+  ],
+
+  "languages": {
+    "zig": {
+      "extensions": ["zig", "zon"],
+      "line_comment": "//",
+      "grammar": {
+        "library": "${plugin}/zig.so",
+        "symbol": "tree_sitter_zig",
+        "highlights": "${plugin}/highlights.scm"
+      }
+    }
+  }
+}

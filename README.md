@@ -16,13 +16,14 @@ dist/pyright-1.0.0.tar.gz        # generated: one tarball per plugin
 ```
 
 Fourteen of these are language servers: a manifest saying which program to run
-for which language, and how to get that program. Two are not, and they are the
-ones worth reading if you are writing your own:
+for which language, and how to get that program. Three are not, and they are
+the ones worth reading if you are writing your own:
 
 | | |
 |---|---|
+| [`zig`](plugins/zig) | A language textfold has never heard of, colours and all, from a tree-sitter grammar compiled on your machine. No change to the editor. |
 | [`cargo`](plugins/cargo) | Build, check, test and clippy without leaving the editor. About a hundred lines of Python, and reading all of it is the point — it is every part of talking to textfold, done by hand, with no library in the way. |
-| [`copilot`](plugins/copilot) | GitHub Copilot: inline suggestions bridged to the language server GitHub ships, and a chat panel. Between them the two use every part of the plugin interface there is. |
+| [`copilot`](plugins/copilot) | GitHub Copilot: inline suggestions bridged to the language server GitHub ships, and a chat panel. Between them the three use every part of the plugin interface there is. |
 
 ## Using it
 
@@ -122,16 +123,69 @@ plugin names a file it brought with it without knowing where textfold put it —
 ```
 
 That is a new language with its own colours, from a plugin, with no change to
-textfold. Build the library with `tree-sitter build -o zig.so`, or by hand:
+textfold. [`zig`](plugins/zig) is that example finished and working, and it is
+worth reading before writing your own — the interesting parts are the two that
+are not obvious.
 
-```sh
-cc -shared -fPIC -O2 -I src -o zig.so src/parser.c src/scanner.c
-nm -D --defined-only zig.so | grep tree_sitter   # what `symbol` should say
+**The library is built, not published.** A `.so` is one file per platform and
+it does not belong in a package index, so the manifest fetches the grammar's C
+and compiles it instead. That is four install steps, and they are written to
+fall through:
+
+```json
+{ "about": "compiling it, with its external scanner",
+  "run": ["cc", "-shared", "-fPIC", "-O2", "-I", "${plugin}/build/src",
+          "-o", "${plugin}/zig.so",
+          "${plugin}/build/src/parser.c", "${plugin}/build/src/scanner.c"],
+  "when": "${plugin}/build/src/scanner.c" },
+
+{ "about": "compiling it",
+  "run": ["cc", "-shared", "-fPIC", "-O2", "-I", "${plugin}/build/src",
+          "-o", "${plugin}/zig.so", "${plugin}/build/src/parser.c"],
+  "when":   "${plugin}/build/src/parser.c",
+  "unless": "${plugin}/zig.so" },
+
+{ "about": "building it with the tree-sitter CLI instead",
+  "run": ["tree-sitter", "build", "-o", "${plugin}/zig.so", "${plugin}/build"],
+  "when":   "${plugin}/build/src/parser.c",
+  "unless": "${plugin}/zig.so" }
 ```
 
-The symbol is usually `tree_sitter_<name>`, but it is the *grammar's* name and
-not yours — check rather than guess. Where it will not load, textfold says why
-in the status bar rather than quietly having no colours.
+`when` is a file that has to exist for a step to be worth running and `unless`
+is one that means it has already been done, so a grammar with an external
+scanner takes the first, one without takes the second, and a machine with no C
+compiler falls through to the third. Nothing branches; the table does.
+
+`needs` is then `["${plugin}/zig.so"]` — a path rather than a program name. A
+bare name is looked up on the `PATH` and has to be runnable; a path only has to
+be there. So the plugins list says `needs` until the library is actually built,
+rather than saying `on` beside a language with no colours.
+
+**The query is published, and you will probably have to edit it.** Two things
+catch people, and [`zig/highlights.scm`](plugins/zig/highlights.scm) has notes
+on both where they happen:
+
+- `#lua-match?` is Neovim's, not tree-sitter's. It parses as a predicate
+  nobody evaluates, so the pattern fires unconditionally — which for the usual
+  `((identifier) @type (#lua-match? @type "^[A-Z]…"))` means *every* name in
+  the file is a type. Write `#match?`, which tree-sitter answers.
+- **Order matters, in the opposite direction from Neovim's.** Where two
+  patterns claim the same bytes textfold keeps the one written *earlier* —
+  tree-sitter's own convention, and how a query puts a special case in front of
+  a catch-all. Most queries open with `(identifier) @variable` because Neovim
+  prefers the *later* pattern; left there, it swallows the whole file. It goes
+  at the bottom, and rules sort most specific first.
+
+Getting the symbol right is the third thing. It is usually
+`tree_sitter_<name>`, but it is the *grammar's* name and not yours — check
+rather than guess:
+
+```sh
+nm -D --defined-only zig.so | grep tree_sitter
+```
+
+Where a library will not load, textfold says why in the status bar rather than
+quietly having no colours.
 
 **Dependencies are fetched, not published.** `node_modules`, `__pycache__`,
 `.venv` and `.git` are left out of the tarball whatever is sitting in your

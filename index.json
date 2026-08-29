@@ -215,6 +215,19 @@
         "yaml-language-server"
       ],
       "see": "https://github.com/redhat-developer/yaml-language-server"
+    },
+    {
+      "id": "zig",
+      "name": "Zig",
+      "about": "What Zig is, and its colours, from a grammar built on your machine",
+      "version": "1.0.0",
+      "url": "dist/zig-1.0.0.tar.gz",
+      "sha256": "bae91e28f372c9f5f2ffb90a97af4877dd1c5f4533f36ee7d8092d0aeb1f2fe4",
+      "size": 3666,
+      "needs": [
+        "${plugin}/zig.so"
+      ],
+      "see": "https://github.com/tree-sitter-grammars/tree-sitter-zig"
     }
   ]
 }
