@@ -1,0 +1,234 @@
+{
+  "id": "jdtls",
+  "version": "1.0.0",
+  "name": "Eclipse JDT",
+  "about": "Types, completions and fixes for Java",
+  "_about": [
+    "jdtls is itself a Java program, and the two questions everybody runs into",
+    "are which Java runs it and which Javas a project may be built against.",
+    "They are not the same answer: a project targeting 8 still needs a server",
+    "running under 17 or newer, and a server that only knows about 21 reports",
+    "every line of an 8 project as an error.",
+    "",
+    "Both are filled in from the machine. ${java_home} is a JDK new enough to",
+    "run the server; ${java_runtimes} is every JDK here, in the shape",
+    "java.configuration.runtimes is written in. Where the wrong one is picked,",
+    "java_home in your settings file wins over both. See src/jdk.rs.",
+    "",
+    "Where there is no Java at all the settings that name one disappear rather",
+    "than being filled in with an empty path, and jdtls falls back to whatever",
+    "java is on the PATH — which is the same thing it did before any of this.",
+    "",
+    "Getting it: brew where there is one, and otherwise the tarball Eclipse",
+    "publishes, which is the only way it is distributed. The steps after the",
+    "download only run if the download happened, so a machine with no curl",
+    "falls through to saying where to get it by hand rather than failing on a",
+    "missing file."
+  ],
+  "needs": [
+    "jdtls"
+  ],
+  "install": [
+    {
+      "about": "jdtls, with brew",
+      "run": [
+        "brew",
+        "install",
+        "jdtls"
+      ],
+      "unless": "jdtls",
+      "system": true
+    },
+    {
+      "about": "somewhere to put it",
+      "run": [
+        "mkdir",
+        "-p",
+        "${tools}/jdtls"
+      ],
+      "unless": "jdtls",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "the Eclipse JDT language server, from eclipse.org",
+      "run": [
+        "curl",
+        "-fsSL",
+        "-o",
+        "${tools}/jdtls/jdtls.tar.gz",
+        "https://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+      ],
+      "unless": "jdtls",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "unpacking it",
+      "run": [
+        "tar",
+        "-xzf",
+        "${tools}/jdtls/jdtls.tar.gz",
+        "-C",
+        "${tools}/jdtls"
+      ],
+      "when": "${tools}/jdtls/jdtls.tar.gz",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "putting jdtls where textfold looks",
+      "run": [
+        "ln",
+        "-sf",
+        "${tools}/jdtls/bin/jdtls",
+        "${bin}/jdtls"
+      ],
+      "when": "${tools}/jdtls/bin/jdtls",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "tidying the download away",
+      "run": [
+        "rm",
+        "-f",
+        "${tools}/jdtls/jdtls.tar.gz"
+      ],
+      "when": "${tools}/jdtls/jdtls.tar.gz",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    }
+  ],
+  "uninstall": [
+    {
+      "run": [
+        "brew",
+        "uninstall",
+        "jdtls"
+      ],
+      "system": true
+    },
+    {
+      "about": "removing the copy textfold fetched",
+      "run": [
+        "rm",
+        "-rf",
+        "${tools}/jdtls",
+        "${bin}/jdtls"
+      ],
+      "os": [
+        "linux",
+        "macos"
+      ]
+    }
+  ],
+  "see": "https://github.com/eclipse-jdtls/eclipse.jdt.ls",
+  "languages": {
+    "java": {
+      "servers": [
+        {
+          "name": "jdtls",
+          "command": "jdtls",
+          "roots": [
+            "settings.gradle",
+            "settings.gradle.kts",
+            "pom.xml",
+            "build.gradle",
+            "build.gradle.kts",
+            ".git"
+          ],
+          "settings": {
+            "java": {
+              "configuration": {
+                "runtimes": "${java_runtimes}",
+                "updateBuildConfiguration": "automatic"
+              },
+              "completion": {
+                "importOrder": [
+                  "java",
+                  "javax",
+                  "com",
+                  "org"
+                ],
+                "guessMethodArguments": true,
+                "maxResults": 0
+              },
+              "signatureHelp": {
+                "enabled": true,
+                "description": {
+                  "enabled": true
+                }
+              },
+              "implementationsCodeLens": {
+                "enabled": false
+              },
+              "referencesCodeLens": {
+                "enabled": false
+              },
+              "inlayHints": {
+                "parameterNames": {
+                  "enabled": "literals"
+                }
+              },
+              "format": {
+                "enabled": true
+              },
+              "autobuild": {
+                "enabled": true
+              },
+              "import": {
+                "maven": {
+                  "enabled": true
+                },
+                "gradle": {
+                  "enabled": true
+                }
+              },
+              "maven": {
+                "downloadSources": true
+              },
+              "eclipse": {
+                "downloadSources": true
+              },
+              "references": {
+                "includeDecompiledSources": true
+              },
+              "contentProvider": {
+                "preferred": "fernflower"
+              },
+              "project": {
+                "referencedLibraries": {
+                  "include": [
+                    "lib/**/*.jar"
+                  ],
+                  "sources": {}
+                }
+              }
+            }
+          },
+          "init_options": {
+            "extendedClientCapabilities": {
+              "classFileContentsSupport": true,
+              "advancedOrganizeImportsSupport": true,
+              "resolveAdditionalTextEditsSupport": true
+            }
+          },
+          "env": {
+            "JAVA_HOME": "${java_home}"
+          }
+        }
+      ]
+    }
+  }
+}

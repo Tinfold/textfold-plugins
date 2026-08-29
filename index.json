@@ -1,0 +1,191 @@
+{
+  "format": 1,
+  "repository": "textfold-plugins",
+  "about": "The plugins textfold can fetch: a language server each, and what it takes to get one.",
+  "plugins": [
+    {
+      "id": "bash-language-server",
+      "name": "bash-language-server",
+      "about": "Completions and shellcheck for shell scripts",
+      "version": "1.0.0",
+      "url": "dist/bash-language-server-1.0.0.tar.gz",
+      "sha256": "9c9d656ee565ce1d8b6b80547535d2fb16f1a58ff714cc7a5e28cbb631154b9a",
+      "size": 368,
+      "needs": [
+        "bash-language-server"
+      ],
+      "see": "https://github.com/bash-lsp/bash-language-server"
+    },
+    {
+      "id": "clangd",
+      "name": "clangd",
+      "about": "Types, completions and fixes for C and C++",
+      "version": "1.0.0",
+      "url": "dist/clangd-1.0.0.tar.gz",
+      "sha256": "83daba09b6501365d1bd9505934f3dae59036a2f5ec4069039a3c36068a72788",
+      "size": 397,
+      "needs": [
+        "clangd"
+      ],
+      "see": "https://clangd.llvm.org/installation"
+    },
+    {
+      "id": "docker-langserver",
+      "name": "docker-langserver",
+      "about": "Completions and warnings for Dockerfiles",
+      "version": "1.0.0",
+      "url": "dist/docker-langserver-1.0.0.tar.gz",
+      "sha256": "806fa2662c3be8566544740a3682bb020a38fbcabe7224c4412fb24b1bb65c01",
+      "size": 383,
+      "needs": [
+        "docker-langserver"
+      ],
+      "see": "https://github.com/rcjsuen/dockerfile-language-server"
+    },
+    {
+      "id": "gopls",
+      "name": "gopls",
+      "about": "Types, completions and fixes for Go",
+      "version": "1.0.0",
+      "url": "dist/gopls-1.0.0.tar.gz",
+      "sha256": "ef14977020ea25b48c077c9ebd2a277bd9572f8a6628f1eeed5d67649edada43",
+      "size": 410,
+      "needs": [
+        "gopls"
+      ],
+      "see": "https://pkg.go.dev/golang.org/x/tools/gopls#section-readme"
+    },
+    {
+      "id": "jdtls",
+      "name": "Eclipse JDT",
+      "about": "Types, completions and fixes for Java",
+      "version": "1.0.0",
+      "url": "dist/jdtls-1.0.0.tar.gz",
+      "sha256": "935b4931a98c460578b9f44aab030b444953dcda50901fa6c841799dd5ae4da0",
+      "size": 1761,
+      "needs": [
+        "jdtls"
+      ],
+      "see": "https://github.com/eclipse-jdtls/eclipse.jdt.ls"
+    },
+    {
+      "id": "marksman",
+      "name": "Marksman",
+      "about": "Links between Markdown notes, and the headings in them",
+      "version": "1.0.0",
+      "url": "dist/marksman-1.0.0.tar.gz",
+      "sha256": "66f652ddd0eb1719518c61e655dca1e5f9026b445bd2d41fcfa9c6636bd0841f",
+      "size": 735,
+      "needs": [
+        "marksman"
+      ],
+      "see": "https://github.com/artempyanykh/marksman/releases"
+    },
+    {
+      "id": "omnisharp",
+      "name": "OmniSharp",
+      "about": "Types and completions for C#",
+      "version": "1.0.0",
+      "url": "dist/omnisharp-1.0.0.tar.gz",
+      "sha256": "a219b673d3f4dde5a583f81a6c3ef9b9ddc6a31e160a3968aa156fa9ffc3a944",
+      "size": 494,
+      "needs": [
+        "OmniSharp"
+      ],
+      "see": "https://github.com/OmniSharp/omnisharp-roslyn/releases"
+    },
+    {
+      "id": "pyright",
+      "name": "Pyright",
+      "about": "Types and completions for Python",
+      "version": "1.0.0",
+      "url": "dist/pyright-1.0.0.tar.gz",
+      "sha256": "782a73f9852712922c71344f96ce595f0e6df4cf9b8877bfb7f5d23c7a00b95b",
+      "size": 635,
+      "needs": [
+        "pyright-langserver"
+      ],
+      "see": "https://microsoft.github.io/pyright/#/installation"
+    },
+    {
+      "id": "ruff",
+      "name": "Ruff",
+      "about": "Lint and formatting for Python",
+      "version": "1.0.0",
+      "url": "dist/ruff-1.0.0.tar.gz",
+      "sha256": "e3f6e89e657ca419478e9bdf4275ae8e1bd291dca1c7beddfbf3a2208875f2fc",
+      "size": 909,
+      "needs": [
+        "ruff"
+      ],
+      "see": "https://docs.astral.sh/ruff/installation/"
+    },
+    {
+      "id": "rust-analyzer",
+      "name": "rust-analyzer",
+      "about": "Types, completions and fixes for Rust",
+      "version": "1.0.0",
+      "url": "dist/rust-analyzer-1.0.0.tar.gz",
+      "sha256": "a6ae42d01aaaa5296d47ff0be0b893748d3b33c3bb5e4de7d69e62dce9e14b2a",
+      "size": 645,
+      "needs": [
+        "rust-analyzer"
+      ],
+      "see": "https://rust-analyzer.github.io/manual.html#installation"
+    },
+    {
+      "id": "taplo",
+      "name": "Taplo",
+      "about": "Completions, formatting and schema checking for TOML",
+      "version": "1.0.0",
+      "url": "dist/taplo-1.0.0.tar.gz",
+      "sha256": "12ad6946a0fb7dc5cb34fc829888592fb0640a3893c676e496e49df4fa23234d",
+      "size": 1228,
+      "needs": [
+        "taplo"
+      ],
+      "see": "https://taplo.tamasfe.dev/cli/installation/binary.html"
+    },
+    {
+      "id": "tsserver",
+      "name": "TypeScript server",
+      "about": "Types and completions for JavaScript, TypeScript and TSX",
+      "version": "1.0.0",
+      "url": "dist/tsserver-1.0.0.tar.gz",
+      "sha256": "934d68fd993a6cc326aa341156b91fa43982008a444af6edc2daec46fe2923d1",
+      "size": 543,
+      "needs": [
+        "typescript-language-server"
+      ],
+      "see": "https://github.com/typescript-language-server/typescript-language-server"
+    },
+    {
+      "id": "vscode-langservers",
+      "name": "VS Code's servers",
+      "about": "CSS, HTML and schema-aware JSON, from the servers VS Code ships",
+      "version": "1.0.0",
+      "url": "dist/vscode-langservers-1.0.0.tar.gz",
+      "sha256": "54d45e8d4f3a3ed134e206fdf7d9c26b548497754c51f83e23ceb3a17a8b2c65",
+      "size": 1137,
+      "needs": [
+        "vscode-css-language-server",
+        "vscode-html-language-server",
+        "vscode-json-language-server"
+      ],
+      "see": "https://github.com/hrsh7th/vscode-langservers-extracted"
+    },
+    {
+      "id": "yaml-language-server",
+      "name": "yaml-language-server",
+      "about": "Schema-aware completions for YAML",
+      "version": "1.0.0",
+      "url": "dist/yaml-language-server-1.0.0.tar.gz",
+      "sha256": "3131fb6f0545f8468b19c659cacf847b51c9e21e79b0efe893165251eea9661b",
+      "size": 375,
+      "needs": [
+        "yaml-language-server"
+      ],
+      "see": "https://github.com/redhat-developer/yaml-language-server"
+    }
+  ]
+}
