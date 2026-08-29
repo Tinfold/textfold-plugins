@@ -17,6 +17,20 @@
       "see": "https://github.com/bash-lsp/bash-language-server"
     },
     {
+      "id": "cargo",
+      "name": "Cargo",
+      "about": "Build, check, test and clippy, without leaving the editor",
+      "version": "1.0.0",
+      "url": "dist/cargo-1.0.0.tar.gz",
+      "sha256": "297d0c176c18ea1feb0db05a0aed9feea4acd1189bd134d80b467a9c0588d154",
+      "size": 7084,
+      "needs": [
+        "python3",
+        "cargo"
+      ],
+      "see": "https://rustup.rs"
+    },
+    {
       "id": "clangd",
       "name": "clangd",
       "about": "Types, completions and fixes for C and C++",
@@ -28,6 +42,21 @@
         "clangd"
       ],
       "see": "https://clangd.llvm.org/installation"
+    },
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot",
+      "about": "Inline suggestions from Copilot, and a chat panel",
+      "version": "1.0.0",
+      "url": "dist/copilot-1.0.0.tar.gz",
+      "sha256": "7e38c46eb3c30a39b9645ae86067eaef5530009512536074294fc8afcd168175",
+      "size": 9883,
+      "needs": [
+        "python3",
+        "npm",
+        "${plugin}/node_modules/@github/copilot-language-server/dist/language-server.js"
+      ],
+      "see": "https://www.npmjs.com/package/@github/copilot-language-server"
     },
     {
       "id": "docker-langserver",

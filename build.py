@@ -38,6 +38,21 @@ FORMAT = 1
 ABOUT = "The plugins textfold can fetch: a language server each, and what it takes to get one."
 
 
+# What is in a plugin's directory but is not part of the plugin. Every one of
+# these is something a plugin author ends up with by testing their own plugin:
+# `npm install` in the directory, running the Python once, keeping it in git.
+# Publishing them would mean a tarball with somebody's platform binaries in it,
+# which is both enormous and wrong for whoever downloads it — the manifest's
+# own install steps are what fetch dependencies, on the machine they will run
+# on.
+NOT_THE_PLUGIN = {".git", "node_modules", "__pycache__", ".venv", "venv", ".DS_Store"}
+
+
+def wanted(path, directory):
+    """Whether a file inside a plugin's directory belongs in its tarball."""
+    return not NOT_THE_PLUGIN.intersection(path.relative_to(directory).parts)
+
+
 def plugins():
     """Every plugin here, as (directory, manifest), in a settled order."""
     for directory in sorted(PLUGINS.iterdir()):
@@ -56,7 +71,8 @@ def tarball(directory):
     raw = io.BytesIO()
     # mtime=0 and no gzip filename field, or gzip stamps the time into it.
     with tarfile.open(fileobj=raw, mode="w:gz", format=tarfile.PAX_FORMAT) as tar:
-        for path in sorted(p for p in directory.rglob("*") if p.is_file()):
+        files = (p for p in directory.rglob("*") if p.is_file() and wanted(p, directory))
+        for path in sorted(files):
             info = tar.gettarinfo(path, arcname=str(path.relative_to(directory)))
             info.mtime = 0
             info.uid = info.gid = 0

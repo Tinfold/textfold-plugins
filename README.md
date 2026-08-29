@@ -3,16 +3,26 @@
 The plugins [textfold](https://github.com/Tinfold/textfold) can fetch.
 
 One directory per plugin, each with a `plugin.json` in it. That is the whole
-of the format — a plugin is data, not code, and this repository is a directory
-of data with a generated index beside it.
+of the format — most of a plugin is data rather than code, and this repository
+is a directory of data with a generated index beside it.
 
 ```
-plugins/pyright/plugin.json
-plugins/rust-analyzer/plugin.json
+plugins/pyright/plugin.json          a language server, which is a table
+plugins/cargo/plugin.json            a plugin that is a program, and
+plugins/cargo/textfold_cargo.py      the program
 …
 index.json                       # generated: what is here, and at what version
 dist/pyright-1.0.0.tar.gz        # generated: one tarball per plugin
 ```
+
+Fourteen of these are language servers: a manifest saying which program to run
+for which language, and how to get that program. Two are not, and they are the
+ones worth reading if you are writing your own:
+
+| | |
+|---|---|
+| [`cargo`](plugins/cargo) | Build, check, test and clippy without leaving the editor. About a hundred lines of Python, and reading all of it is the point — it is every part of talking to textfold, done by hand, with no library in the way. |
+| [`copilot`](plugins/copilot) | GitHub Copilot: inline suggestions bridged to the language server GitHub ships, and a chat panel. Between them the two use every part of the plugin interface there is. |
 
 ## Using it
 
@@ -90,7 +100,9 @@ anything anybody would want.
 A plugin that is more than a manifest keeps its other files in the same
 directory; they are in the tarball and land beside the manifest when it is
 installed. `${plugin}` in the manifest is that directory, which is how a
-plugin names a file it brought with it without knowing where textfold put it:
+plugin names a file it brought with it without knowing where textfold put it —
+[`cargo`](plugins/cargo/plugin.json) points at its own Python that way, and
+[`copilot`](plugins/copilot/plugin.json) installs its npm packages there:
 
 ```json
 {
@@ -120,6 +132,23 @@ nm -D --defined-only zig.so | grep tree_sitter   # what `symbol` should say
 The symbol is usually `tree_sitter_<name>`, but it is the *grammar's* name and
 not yours — check rather than guess. Where it will not load, textfold says why
 in the status bar rather than quietly having no colours.
+
+**Dependencies are fetched, not published.** `node_modules`, `__pycache__`,
+`.venv` and `.git` are left out of the tarball whatever is sitting in your
+working copy, so testing your own plugin does not put a hundred megabytes of
+somebody else's platform binaries into a download. What a plugin needs is
+fetched by its own `install` steps, on the machine that will run it:
+
+```json
+{ "needs": ["npm",
+            "${plugin}/node_modules/@github/copilot-language-server/dist/language-server.js"],
+  "install": [{ "run": ["npm", "install", "--prefix", "${plugin}", "--silent"] }],
+  "uninstall": [{ "run": ["rm", "-rf", "${plugin}/node_modules"] }] }
+```
+
+A `needs` that names a file inside the plugin like that is not checked before
+the plugin is installed — there is nothing to fill `${plugin}` in with until
+there is a plugin.
 
 ## What is generated
 
