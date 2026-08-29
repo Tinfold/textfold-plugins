@@ -1,0 +1,53 @@
+{
+  "id": "files",
+  "version": "1.0.0",
+  "name": "Files",
+  "about": "A tree of the project down the side, which you can browse and rearrange",
+
+  "_about": [
+    "The worked example of a plugin that changes the editor's shape rather",
+    "than only its contents. A column pinned down the left, at a width of",
+    "its own, collapsed with the same key that opened it — all of it from a",
+    "plugin, with no change to textfold.",
+    "",
+    "  textfold --install files",
+    "",
+    "Then `files` in the palette, or bind the key it suggests (Alt-1).",
+    "Running it again puts it away, which is what collapsible means from a",
+    "keyboard.",
+    "",
+    "`dock` is the whole of the difference between this and cargo's report",
+    "panel. Declared here rather than announced by the program, so the",
+    "editor can lay it out before this has ever been started; a plugin that",
+    "wants to move or resize it while running can say so with `panel/dock`.",
+    "",
+    "It renames and deletes through the editor — `file/rename`, not `mv` —",
+    "because a buffer open on a file that was renamed underneath it is a",
+    "buffer that will save to the old name, and a language server still",
+    "being told about a path that no longer exists. Only the editor can fix",
+    "that, so only the editor should be doing it."
+  ],
+
+  "needs": ["python3"],
+  "see": "https://github.com/Tinfold/textfold-plugins/tree/main/plugins/files",
+
+  "host": {
+    "command": "python3",
+    "args": ["${plugin}/textfold_files.py"],
+    "roots": [".git"],
+    "activate": ["command"]
+  },
+
+  "panels": [
+    {
+      "name": "tree",
+      "about": "The project, as a tree down the side",
+      "dock": "left",
+      "size": 32
+    }
+  ],
+
+  "keys": {
+    "files/tree": ["alt-1"]
+  }
+}

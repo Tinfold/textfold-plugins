@@ -72,6 +72,19 @@
       "see": "https://github.com/rcjsuen/dockerfile-language-server"
     },
     {
+      "id": "files",
+      "name": "Files",
+      "about": "A tree of the project down the side, which you can browse and rearrange",
+      "version": "1.0.0",
+      "url": "dist/files-1.0.0.tar.gz",
+      "sha256": "0d4b9fcb98c127d717c9fdbf3b53b798b262df21df85cfc926a4a1ace180e5a4",
+      "size": 4765,
+      "needs": [
+        "python3"
+      ],
+      "see": "https://github.com/Tinfold/textfold-plugins/tree/main/plugins/files"
+    },
+    {
       "id": "gopls",
       "name": "gopls",
       "about": "Types, completions and fixes for Go",
@@ -135,6 +148,20 @@
         "pyright-langserver"
       ],
       "see": "https://microsoft.github.io/pyright/#/installation"
+    },
+    {
+      "id": "rebase",
+      "name": "Interactive rebase",
+      "about": "Reorder, squash and drop commits from a panel, without the todo file",
+      "version": "1.0.0",
+      "url": "dist/rebase-1.0.0.tar.gz",
+      "sha256": "a6ec5b380b92fba66aad4f2f2e1364aa42639980c9bc380f8344473b9b243add",
+      "size": 6123,
+      "needs": [
+        "python3",
+        "git"
+      ],
+      "see": "https://git-scm.com/docs/git-rebase"
     },
     {
       "id": "ruff",

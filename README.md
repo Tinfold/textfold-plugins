@@ -16,14 +16,80 @@ dist/pyright-1.0.0.tar.gz        # generated: one tarball per plugin
 ```
 
 Fourteen of these are language servers: a manifest saying which program to run
-for which language, and how to get that program. Three are not, and they are
+for which language, and how to get that program. Five are not, and they are
 the ones worth reading if you are writing your own:
 
 | | |
 |---|---|
+| [`files`](plugins/files) | A tree of the project pinned down the left, collapsed with the key that opened it. The example of a plugin changing the editor's **shape** — `"dock": "left"` in the manifest is the whole of the difference. |
+| [`rebase`](plugins/rebase) | `git rebase -i` as a panel of your commits instead of a todo file. Sets verbs, reorders, and runs the rebase by being the `GIT_SEQUENCE_EDITOR` git asks for. |
 | [`zig`](plugins/zig) | A language textfold has never heard of, colours and all, from a tree-sitter grammar compiled on your machine. No change to the editor. |
 | [`cargo`](plugins/cargo) | Build, check, test and clippy without leaving the editor. About a hundred lines of Python, and reading all of it is the point — it is every part of talking to textfold, done by hand, with no library in the way. |
-| [`copilot`](plugins/copilot) | GitHub Copilot: inline suggestions bridged to the language server GitHub ships, and a chat panel. Between them the three use every part of the plugin interface there is. |
+| [`copilot`](plugins/copilot) | GitHub Copilot: inline suggestions bridged to the language server GitHub ships, and a chat panel. Between them the five use every part of the plugin interface there is. |
+
+## Panels, and docking one
+
+A panel is a buffer the plugin owns and fills: styled, clickable lines, its
+own keys, updated whenever the plugin likes. Declare it in the manifest and it
+is a row in the palette, a key you can bind and a switch in the plugins list
+before the program behind it has ever been started.
+
+```json
+"panels": [
+  { "name": "tree", "about": "The project, as a tree down the side",
+    "dock": "left", "size": 32 }
+]
+```
+
+`dock` is the whole of the difference between a panel you switch to and a
+panel that is part of the editor's shape. Without it you get a tab, which is
+right for something you read and then leave — a build report, a list of test
+failures. With it you get `left`, `right` or `bottom`: a column of a fixed
+width down a side, or a row of a fixed height along the bottom, taking its
+room off the edge and leaving the middle to the code.
+
+A docked panel is a **switch**. Running its command again puts it away, which
+is what collapsible means from a keyboard, and the plugin is told so
+(`panel/closed`) rather than being left redrawing into nothing. It comes back
+where it was next time you open the project.
+
+It is an ordinary pane in every other respect — a cursor, the focus rule, Tab
+into it and out again, `close-pane` — because a sidebar that was its own kind
+of surface would need its own answer to every question a pane has already
+answered. The only thing it does not get is line numbers, since a tree of file
+names has no lines you refer to by number.
+
+A plugin that wants to move or resize it while running can:
+
+```json
+{ "method": "panel/dock",
+  "params": { "panel": "files/tree", "edge": "bottom", "size": 12 } }
+```
+
+`"edge": "none"` puts it back in a tab.
+
+### Changing files
+
+A plugin that rearranges the project asks the editor to do it rather than
+running `mv`:
+
+| | |
+|---|---|
+| `file/create` | `{"path": …, "directory": true}` for a folder |
+| `file/rename` | `{"from": …, "to": …}` |
+| `file/delete` | `{"path": …}` |
+
+Not tidiness. A buffer open on a file that was renamed underneath it is a
+buffer that will save to the old name, and a language server still being told
+about a path that no longer exists — going on reporting problems in a file
+nobody can open. Only the editor can carry the buffers across, so only the
+editor should be doing the move.
+
+Every path is resolved and checked to be inside the project, because a file
+explorer is a thing that sends paths back and a plugin that could be talked
+into `../../.ssh/id_rsa` by a directory name is a plugin nobody should run.
+Deleting refuses outright if anything inside has unsaved changes; `confirm` is
+there for asking first, and it asks in a box the person can read.
 
 ## Using it
 

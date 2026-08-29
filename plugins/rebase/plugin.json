@@ -1,0 +1,56 @@
+{
+  "id": "rebase",
+  "version": "1.0.0",
+  "name": "Interactive rebase",
+  "about": "Reorder, squash and drop commits from a panel, without the todo file",
+
+  "_about": [
+    "git rebase -i works by writing a todo list and opening your editor on",
+    "it. This keeps that arrangement and replaces the part where you edit a",
+    "file about your commits with a panel of your commits.",
+    "",
+    "  textfold --install rebase",
+    "",
+    "Then `rebase` in the palette, or Alt-2. p r e s f d set what happens to",
+    "the commit you are on, [ and ] move it, x runs it.",
+    "",
+    "The trick is GIT_SEQUENCE_EDITOR. git asks for the todo file to be",
+    "edited; the editor it is given is `cp our-plan`, which replaces it with",
+    "the one this plugin wrote. Nothing here re-implements any part of what",
+    "rebase does.",
+    "",
+    "Where it stops: a rebase that hits a conflict wants files resolved and",
+    "`git rebase --continue`. This opens the files git named and gives you c",
+    "and a for continue and abort, but resolving the conflict is you and the",
+    "editor. Conflict resolution is its own project and pretending otherwise",
+    "here would be worse than saying so."
+  ],
+
+  "needs": ["python3", "git"],
+  "see": "https://git-scm.com/docs/git-rebase",
+
+  "host": {
+    "command": "python3",
+    "args": ["${plugin}/textfold_rebase.py"],
+    "roots": [".git"],
+    "activate": ["command"]
+  },
+
+  "panels": [
+    {
+      "name": "plan",
+      "about": "The commits, and what is about to happen to each",
+      "dock": "bottom",
+      "size": 14
+    }
+  ],
+
+  "commands": [
+    { "name": "continue", "about": "Carry on a rebase that stopped" },
+    { "name": "abort", "about": "Abandon a rebase that stopped, and put everything back" }
+  ],
+
+  "keys": {
+    "rebase/plan": ["alt-2"]
+  }
+}
