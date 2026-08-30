@@ -101,10 +101,10 @@
       "id": "jdtls",
       "name": "Eclipse JDT",
       "about": "Types, completions and fixes for Java",
-      "version": "1.0.0",
-      "url": "dist/jdtls-1.0.0.tar.gz",
-      "sha256": "935b4931a98c460578b9f44aab030b444953dcda50901fa6c841799dd5ae4da0",
-      "size": 1761,
+      "version": "1.1.0",
+      "url": "dist/jdtls-1.1.0.tar.gz",
+      "sha256": "ce58351166458462b33706318671178f6e29d2b3258aaeb8cde376dda648941b",
+      "size": 2563,
       "needs": [
         "jdtls"
       ],

@@ -1,6 +1,6 @@
 {
   "id": "jdtls",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "Eclipse JDT",
   "about": "Types, completions and fixes for Java",
   "_about": [
@@ -17,13 +17,28 @@
     "",
     "Where there is no Java at all the settings that name one disappear rather",
     "than being filled in with an empty path, and jdtls falls back to whatever",
-    "java is on the PATH — which is the same thing it did before any of this.",
+    "java is on the PATH \u2014 which is the same thing it did before any of this.",
     "",
     "Getting it: brew where there is one, and otherwise the tarball Eclipse",
     "publishes, which is the only way it is distributed. The steps after the",
     "download only run if the download happened, so a machine with no curl",
     "falls through to saying where to get it by hand rather than failing on a",
-    "missing file."
+    "missing file.",
+    "",
+    "Debugging is jdtls's too. The Java debug adapter is not a program you can",
+    "run: it is an OSGi bundle that lives inside the language server, which",
+    "starts one on request and answers with a port. So the jar is fetched",
+    "beside the server, named in `bundles` so the server loads it, and the",
+    "debugger says `server` and `start` rather than `command`. textfold speaks",
+    "the same protocol down the socket that it speaks to gdb down a pipe.",
+    "",
+    "`mainClass` is ${file_class}: the class this file declares, with its",
+    "package in front of it. A file saying `package com.example.calc;` is the",
+    "class `com.example.calc.Main`, and that qualified name is what a JVM is",
+    "told to run \u2014 the bare file name matches only a class in the default",
+    "package. Both cases come out right without anything being said in",
+    "settings, which matters because settings are per-plugin rather than",
+    "per-project: one name there would be the name every Java project got."
   ],
   "needs": [
     "jdtls"
@@ -91,6 +106,21 @@
         "${bin}/jdtls"
       ],
       "when": "${tools}/jdtls/bin/jdtls",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "the Java debug adapter, from Maven Central",
+      "run": [
+        "curl",
+        "-fsSL",
+        "-o",
+        "${tools}/jdtls/java-debug.jar",
+        "https://repo1.maven.org/maven2/com/microsoft/java/com.microsoft.java.debug.plugin/0.53.1/com.microsoft.java.debug.plugin-0.53.1.jar"
+      ],
+      "unless": "${tools}/jdtls/java-debug.jar",
       "os": [
         "linux",
         "macos"
@@ -222,11 +252,39 @@
               "classFileContentsSupport": true,
               "advancedOrganizeImportsSupport": true,
               "resolveAdditionalTextEditsSupport": true
-            }
+            },
+            "bundles": [
+              "${tools}/jdtls/java-debug.jar"
+            ]
           },
           "env": {
             "JAVA_HOME": "${java_home}"
           }
+        }
+      ],
+      "debuggers": [
+        {
+          "name": "java-debug",
+          "server": "jdtls",
+          "start": "vscode.java.startDebugSession",
+          "resolve": {
+            "command": "java.project.getClasspaths",
+            "arguments": [
+              "${file_uri}",
+              "{\"scope\": \"runtime\"}"
+            ],
+            "into": {
+              "classPaths": "classpaths",
+              "modulePaths": "modulepaths"
+            }
+          },
+          "launch": {
+            "request": "launch",
+            "mainClass": "${file_class}",
+            "cwd": "${root}",
+            "console": "internalConsole"
+          },
+          "see": "The Java debugger is a plugin to jdtls rather than a program: the jdtls plugin fetches it and the server starts it. If it will not start, the server has not finished reading the project yet \u2014 give it a moment and press the key again."
         }
       ]
     }
