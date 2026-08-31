@@ -1,6 +1,6 @@
 {
   "id": "copilot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "GitHub Copilot",
   "about": "Inline suggestions from Copilot, and a chat panel",
   "_about": [

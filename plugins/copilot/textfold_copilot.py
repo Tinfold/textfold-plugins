@@ -71,6 +71,8 @@ class Wire:
         self.lock = threading.Lock()
         self.next_id = 0
         self.waiting = {}
+        # Requests whose failure is nobody's business. See `request`.
+        self.silent = set()
 
     def send(self, message):
         body = json.dumps(message).encode("utf-8")
@@ -82,20 +84,40 @@ class Wire:
     def notify(self, method, params):
         self.send({"jsonrpc": "2.0", "method": method, "params": params})
 
-    def request(self, method, params, then=None):
+    def request(self, method, params, then=None, quiet=False):
         """Ask, and write down what the answer will mean.
 
         The same trick textfold plays on its plugins, played on the server:
         nothing here waits for a reply, and a reply that arrives after we have
         moved on is dropped by whoever asked rather than guessed at.
+
+        `quiet` is for the questions nobody asked out loud. An inline
+        completion is asked for on every keystroke and Copilot answers the ones
+        it has moved past with an error — "superseded by a newer request" —
+        which is the server working correctly and is not news. Said out loud it
+        is a status line that flickers with an error message the whole time you
+        are typing.
         """
         with self.lock:
             self.next_id += 1
             request_id = self.next_id
         if then is not None:
             self.waiting[request_id] = then
+        if quiet:
+            self.silent.add(request_id)
         self.send({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params})
         return request_id
+
+    def was_quiet(self, request_id):
+        """Whether this request asked for its failures to be kept to itself.
+
+        Takes the note away as it answers, so the set holds only what is still
+        outstanding rather than every question ever asked.
+        """
+        if request_id in self.silent:
+            self.silent.discard(request_id)
+            return True
+        return False
 
     def answer(self, request_id, result=None):
         self.send({"jsonrpc": "2.0", "id": request_id, "result": result})
@@ -241,13 +263,18 @@ class Copilot:
                     self.wire.answer(message["id"], None)
                 continue
             then = self.wire.claim(message.get("id"))
+            quiet = self.wire.was_quiet(message.get("id"))
             if then is None:
                 continue
             if "error" in message:
-                self.editor.say(
-                    f"copilot: {message['error'].get('message', 'something went wrong')}",
-                    kind="bad",
-                )
+                # A question asked on every keystroke is one the server is
+                # entitled to give up on; only the questions somebody asked
+                # out loud are worth the status line.
+                if not quiet:
+                    self.editor.say(
+                        f"copilot: {message['error'].get('message', 'something went wrong')}",
+                        kind="bad",
+                    )
                 continue
             then(message.get("result"))
 
@@ -390,12 +417,16 @@ class Copilot:
             else:
                 self.editor.clear_hint(path)
 
+        # Quietly: this is asked again on every keystroke, and Copilot answers
+        # the ones it has moved past with an error rather than a result. That
+        # is the server doing its job, and saying so puts an error in the
+        # status line for as long as somebody is typing.
         self.wire.request("textDocument/inlineCompletion", {
             "textDocument": {"uri": as_uri(path), "version": self.version.get(path, 0)},
             "position": {"line": line, "character": column},
             "context": {"triggerKind": 2},
             "formattingOptions": {"tabSize": 4, "insertSpaces": True},
-        }, then=answer)
+        }, then=answer, quiet=True)
 
     def taken(self):
         """Tell Copilot its suggestion was used, which is how it learns."""
