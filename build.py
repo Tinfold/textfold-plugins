@@ -16,6 +16,7 @@ find a version that was never published.
 """
 
 import argparse
+import gzip
 import hashlib
 import io
 import json
@@ -62,11 +63,19 @@ def plugins():
 
 
 def tarball(directory):
-    """One plugin as a gzipped tar, byte for byte the same every time.
+    """One plugin as a gzipped tar, the same every time it is built *here*.
 
     Reproducible on purpose: a tarball whose bytes changed because the clock
     did would be a new version of every plugin on every build, and the whole
     point of a digest in the index is that it says whether anything changed.
+    So the clock, the owner, the order and the modes are all pinned.
+
+    What cannot be pinned is the compressor. zlib and zlib-ng are both `zlib`
+    as far as Python is concerned and they do not emit the same bytes for the
+    same input, so a tarball built on Fedora and the same tarball built on a
+    CI runner differ — in their compression, not in a single thing either of
+    them contains. That is why nothing here compares tarballs by their bytes;
+    see `contents`.
     """
     raw = io.BytesIO()
     # mtime=0 and no gzip filename field, or gzip stamps the time into it.
@@ -84,6 +93,18 @@ def tarball(directory):
     data = bytearray(raw.getvalue())
     data[4:8] = b"\0\0\0\0"
     return bytes(data)
+
+
+def contents(data):
+    """What is actually *in* a tarball: the tar, without the compression.
+
+    The thing to compare two builds by. Two compressors given the same tar
+    write different bytes and the same files, and a package repository cares
+    about the files — a rebuild that changes nothing but the compression is
+    not a new version of anything, and calling it one would republish every
+    plugin every time somebody built this on a different machine.
+    """
+    return gzip.decompress(data)
 
 
 def check(ident, manifest):
@@ -171,11 +192,39 @@ def build():
     return index, files, problems
 
 
-def write(index, files):
-    DIST.mkdir(exist_ok=True)
-    INDEX.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n")
+def settle(index, files):
+    """Decide which tarballs are already published, and say so in the index.
+
+    A tarball whose contents match the one on the disk is *the* tarball: it is
+    what people will download, so its digest and its size are what the index
+    has to say — not those of the copy just built, which differs whenever this
+    is run somewhere with a different zlib. See `contents`.
+
+    Answers the ones that really are out of date.
+    """
+    stale = []
     for name, data in files.items():
-        (DIST / name).write_bytes(data)
+        path = DIST / name
+        if not path.is_file() or contents(path.read_bytes()) != contents(data):
+            stale.append(name)
+            continue
+        published = path.read_bytes()
+        for entry in index["plugins"]:
+            if entry["url"] == f"dist/{name}":
+                entry["sha256"] = hashlib.sha256(published).hexdigest()
+                entry["size"] = len(published)
+    return stale
+
+
+def write(index, files, stale):
+    DIST.mkdir(exist_ok=True)
+    # Only the ones that have really changed. Rewriting the rest would change
+    # their bytes on a machine whose zlib differs from the one that built them
+    # last — a new digest and a new download for everybody, for not one byte
+    # of difference in what they get.
+    for name in stale:
+        (DIST / name).write_bytes(files[name])
+    INDEX.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n")
     # A tarball for a version nobody publishes any more is litter, and litter
     # in a directory people fetch from is a download that half works.
     for stale in DIST.iterdir():
@@ -196,15 +245,14 @@ def main():
     if problems:
         return 1
 
+    # What is already published stays published, and the index says so.
+    behind = settle(index, files)
+
     if args.check:
         want = json.dumps(index, indent=2, ensure_ascii=False) + "\n"
-        stale = []
+        stale = [f"dist/{name}" for name in behind]
         if not INDEX.is_file() or INDEX.read_text() != want:
             stale.append("index.json")
-        for name, data in files.items():
-            path = DIST / name
-            if not path.is_file() or path.read_bytes() != data:
-                stale.append(f"dist/{name}")
         for path in DIST.iterdir() if DIST.is_dir() else []:
             if path.name not in files:
                 stale.append(f"dist/{path.name} is no longer published")
@@ -216,8 +264,9 @@ def main():
         print(f"up to date: {len(files)} plugins")
         return 0
 
-    write(index, files)
-    print(f"wrote index.json and {len(files)} tarballs")
+    write(index, files, behind)
+    kept = len(files) - len(behind)
+    print(f"wrote index.json and {len(behind)} tarballs, {kept} already published")
     return 0
 
 
