@@ -1,26 +1,55 @@
 {
   "id": "tsserver",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "name": "TypeScript server",
-  "about": "Types and completions for JavaScript, TypeScript and TSX",
+  "about": "Types, completions and prettier for JavaScript, TypeScript and TSX",
   "_about": [
     "One server for three languages, which is what it always was — it was",
-    "written out three times because there was nowhere else to put it."
+    "written out three times because there was nowhere else to put it.",
+    "",
+    "prettier comes with it, and lays the file out instead of tsserver rather",
+    "than after it. Two formatters over one file is how a project ends up with",
+    "a diff nobody wrote: prettier decides where the line breaks and tsserver",
+    "then tidies the result into something that is neither, and the next person",
+    "to run prettier alone puts it all back. Whichever of the two goes last is",
+    "the house style, so it may as well be the one the project already has a",
+    "`.prettierrc` for.",
+    "",
+    "To turn that round — tsserver's own formatter, prettier not at all, or",
+    "prettier alongside rather than instead — put it in",
+    "`~/.config/textfold/plugin-settings/tsserver.json`:",
+    "",
+    "  { \"tools\": { \"prettier\": { \"on_save\": false } } }",
+    "  { \"tools\": { \"prettier\": { \"instead_of_lsp\": false } } }",
+    "",
+    "That file is yours and survives an update; this one does not."
   ],
   "needs": [
-    "typescript-language-server"
+    "typescript-language-server",
+    "prettier"
   ],
   "install": [
     {
-      "about": "typescript-language-server, from npm",
+      "about": "typescript-language-server and prettier, from npm",
       "run": [
         "npm",
         "install",
         "--global",
         "typescript",
-        "typescript-language-server"
+        "typescript-language-server",
+        "prettier"
       ],
       "unless": "typescript-language-server"
+    },
+    {
+      "about": "prettier, for an install that had the server already",
+      "run": [
+        "npm",
+        "install",
+        "--global",
+        "prettier"
+      ],
+      "unless": "prettier"
     }
   ],
   "uninstall": [
@@ -29,11 +58,41 @@
         "npm",
         "uninstall",
         "--global",
-        "typescript-language-server"
+        "typescript-language-server",
+        "prettier"
       ]
     }
   ],
   "see": "https://github.com/typescript-language-server/typescript-language-server",
+  "tools": [
+    {
+      "name": "prettier",
+      "about": "Lay this file out the way prettier would",
+      "command": "prettier",
+      "args": [
+        "--stdin-filepath",
+        "${file}"
+      ],
+      "languages": [
+        "javascript",
+        "typescript",
+        "tsx"
+      ],
+      "roots": [
+        ".prettierrc",
+        ".prettierrc.json",
+        ".prettierrc.js",
+        "prettier.config.js",
+        "prettier.config.mjs",
+        "package.json",
+        ".git"
+      ],
+      "stdin": true,
+      "output": "replace",
+      "on_save": true,
+      "instead_of_lsp": true
+    }
+  ],
   "languages": {
     "javascript": {
       "servers": [

@@ -205,13 +205,14 @@
     {
       "id": "tsserver",
       "name": "TypeScript server",
-      "about": "Types and completions for JavaScript, TypeScript and TSX",
-      "version": "1.0.0",
-      "url": "dist/tsserver-1.0.0.tar.gz",
-      "sha256": "934d68fd993a6cc326aa341156b91fa43982008a444af6edc2daec46fe2923d1",
-      "size": 543,
+      "about": "Types, completions and prettier for JavaScript, TypeScript and TSX",
+      "version": "1.1.0",
+      "url": "dist/tsserver-1.1.0.tar.gz",
+      "sha256": "da61c88b37754a6e84aeccf0cc83944548150316afaba3658cda38a55be47879",
+      "size": 1118,
       "needs": [
-        "typescript-language-server"
+        "typescript-language-server",
+        "prettier"
       ],
       "see": "https://github.com/typescript-language-server/typescript-language-server"
     },
