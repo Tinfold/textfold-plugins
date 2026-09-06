@@ -1,56 +1,249 @@
 {
   "id": "rebase",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "name": "Interactive rebase",
-  "about": "Reorder, squash and drop commits from a panel, without the todo file",
-
+  "about": "The rebase plan as a buffer, with the commit under the cursor beside it",
   "_about": [
-    "git rebase -i works by writing a todo list and opening your editor on",
-    "it. This keeps that arrangement and replaces the part where you edit a",
-    "file about your commits with a panel of your commits.",
+    "git opens an editor three times during a rebase: on the plan, on a",
+    "message it has been asked to reword, and — through the files it could",
+    "not merge — on the conflict. This does not replace any of that. It",
+    "makes textfold the editor git asks for, and makes those buffers worth",
+    "having opened.",
     "",
     "  textfold --install rebase",
     "",
-    "Then `rebase` in the palette, or Alt-2. p r e s f d set what happens to",
-    "the commit you are on, [ and ] move it, x runs it.",
+    "  git config --global sequence.editor textfold",
+    "  git config --global core.editor textfold",
     "",
-    "The trick is GIT_SEQUENCE_EDITOR. git asks for the todo file to be",
-    "edited; the editor it is given is `cp our-plan`, which replaces it with",
-    "the one this plugin wrote. Nothing here re-implements any part of what",
-    "rebase does.",
+    "Then `git rebase -i` in a terminal opens the plan here, and so does",
+    "`rebase/start` in the palette. The two are the same rebase.",
     "",
-    "Where it stops: a rebase that hits a conflict wants files resolved and",
-    "`git rebase --continue`. This opens the files git named and gives you c",
-    "and a for continue and abort, but resolving the conflict is you and the",
-    "editor. Conflict resolution is its own project and pretending otherwise",
-    "here would be worse than saying so."
+    "The plan is the file git wrote, in a buffer, so the cursor, selections,",
+    "`move-line-up`, undo and search all work on it already. What this adds",
+    "is the three things a buffer cannot know on its own:",
+    "",
+    "  * Alt-3 shows the commit under the cursor as a diff. Deciding between",
+    "    squash and drop by looking at the change is the whole argument for",
+    "    doing a rebase in an editor.",
+    "  * The plan is checked on save and the answers go in the margin — a",
+    "    squash on the first line, a sha that is not in the range, a plan",
+    "    with nothing left to apply.",
+    "  * Alt-2 says what git is actually doing: what is done, what stopped",
+    "    it, which files are unmerged, and what is left.",
+    "",
+    "The plan is coloured by a tree-sitter grammar this fetches and compiles",
+    "when it is installed — the same four steps the `zig` plugin uses, and",
+    "the reason `highlights.scm` sits beside this file. The verbs are given",
+    "the colours the panel gives them, so a `squash` reads the same in both.",
+    "Without a compiler the grammar is simply not built and a plan opens",
+    "uncoloured; everything else here works either way, which is why the",
+    "library is not in `needs`.",
+    "",
+    "`rebase/continue` is the whole gesture rather than the git command:",
+    "it refuses while a resolved file is unsaved or still has a conflict",
+    "marker in it, takes you to the line, stages what you resolved, and then",
+    "continues — with a reworded or squashed message opening in a buffer",
+    "instead of being taken silently.",
+    "",
+    "How git is handed back to this window: this script in `--editor` mode",
+    "is what `$GIT_EDITOR` points at while a rebase runs. It connects to the",
+    "textfold that started it, asks for the file to be opened, and blocks",
+    "until the buffer is closed. Closing it exits zero, which is git's own",
+    "signal to carry on; calling the rebase off exits non-zero, which is",
+    "git's own signal to put everything back."
   ],
-
-  "needs": ["python3", "git"],
+  "needs": [
+    "python3",
+    "git"
+  ],
   "see": "https://git-scm.com/docs/git-rebase",
-
   "host": {
     "command": "python3",
-    "args": ["${plugin}/textfold_rebase.py"],
-    "roots": [".git"],
-    "activate": ["command"]
+    "args": [
+      "${plugin}/textfold_rebase.py"
+    ],
+    "roots": [
+      ".git"
+    ],
+    "activate": [
+      "language:git-rebase",
+      "command"
+    ],
+    "wants_buffers": [
+      "git-rebase",
+      "git"
+    ]
   },
-
+  "languages": {
+    "git-rebase": {
+      "filenames": [
+        "git-rebase-todo",
+        "git-rebase-todo.backup"
+      ],
+      "line_comment": "#",
+      "grammar": {
+        "library": "${plugin}/git_rebase.so",
+        "symbol": "tree_sitter_git_rebase",
+        "highlights": "${plugin}/highlights.scm"
+      }
+    }
+  },
   "panels": [
     {
       "name": "plan",
-      "about": "The commits, and what is about to happen to each",
+      "about": "What the rebase is doing, and what is left of it",
       "dock": "bottom",
       "size": 14
+    },
+    {
+      "name": "commit",
+      "about": "The commit under the cursor in the plan, as a diff",
+      "dock": "right",
+      "size": 64
     }
   ],
-
   "commands": [
-    { "name": "continue", "about": "Carry on a rebase that stopped" },
-    { "name": "abort", "about": "Abandon a rebase that stopped, and put everything back" }
+    {
+      "name": "start",
+      "about": "Rebase from a commit you pick, interactively"
+    },
+    {
+      "name": "verb",
+      "about": "What happens to the commit on this line"
+    },
+    {
+      "name": "show",
+      "about": "The commit on this line, in full, in a buffer"
+    },
+    {
+      "name": "continue",
+      "about": "Stage what you resolved and carry on"
+    },
+    {
+      "name": "skip",
+      "about": "Drop the commit the rebase stopped on"
+    },
+    {
+      "name": "abort",
+      "about": "Abandon the rebase and put everything back"
+    }
   ],
-
   "keys": {
-    "rebase/plan": ["alt-2"]
-  }
+    "rebase/plan": [
+      "alt-2"
+    ],
+    "rebase/commit": [
+      "alt-3"
+    ]
+  },
+  "install": [
+    {
+      "about": "somewhere to build the grammar",
+      "run": [
+        "mkdir",
+        "-p",
+        "${plugin}/build"
+      ],
+      "unless": "${plugin}/git_rebase.so",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "the git-rebase grammar's sources, from GitHub",
+      "run": [
+        "curl",
+        "-fsSL",
+        "-o",
+        "${plugin}/build/grammar.tar.gz",
+        "https://github.com/the-mikedavis/tree-sitter-git-rebase/archive/refs/tags/v1.0.0.tar.gz"
+      ],
+      "unless": "${plugin}/git_rebase.so",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "unpacking them",
+      "run": [
+        "tar",
+        "-xzf",
+        "${plugin}/build/grammar.tar.gz",
+        "-C",
+        "${plugin}/build",
+        "--strip-components=1"
+      ],
+      "when": "${plugin}/build/grammar.tar.gz",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "compiling it",
+      "run": [
+        "cc",
+        "-shared",
+        "-fPIC",
+        "-O2",
+        "-I",
+        "${plugin}/build/src",
+        "-o",
+        "${plugin}/git_rebase.so",
+        "${plugin}/build/src/parser.c"
+      ],
+      "when": "${plugin}/build/src/parser.c",
+      "unless": "${plugin}/git_rebase.so",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "building it with the tree-sitter CLI instead",
+      "run": [
+        "tree-sitter",
+        "build",
+        "-o",
+        "${plugin}/git_rebase.so",
+        "${plugin}/build"
+      ],
+      "when": "${plugin}/build/src/parser.c",
+      "unless": "${plugin}/git_rebase.so",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    },
+    {
+      "about": "throwing the sources away",
+      "run": [
+        "rm",
+        "-rf",
+        "${plugin}/build"
+      ],
+      "when": "${plugin}/build",
+      "os": [
+        "linux",
+        "macos"
+      ]
+    }
+  ],
+  "uninstall": [
+    {
+      "about": "the grammar it built",
+      "run": [
+        "rm",
+        "-rf",
+        "${plugin}/git_rebase.so",
+        "${plugin}/build"
+      ],
+      "os": [
+        "linux",
+        "macos"
+      ]
+    }
+  ]
 }
