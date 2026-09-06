@@ -152,11 +152,11 @@
     {
       "id": "rebase",
       "name": "Interactive rebase",
-      "about": "Reorder, squash and drop commits from a panel, without the todo file",
-      "version": "1.0.0",
-      "url": "dist/rebase-1.0.0.tar.gz",
-      "sha256": "a6ec5b380b92fba66aad4f2f2e1364aa42639980c9bc380f8344473b9b243add",
-      "size": 6123,
+      "about": "The rebase plan as a buffer, with the commit under the cursor beside it",
+      "version": "2.0.0",
+      "url": "dist/rebase-2.0.0.tar.gz",
+      "sha256": "9d5465f57208702538428b3396fc24553bbcaed37081c1b906fa823cdb56cc2e",
+      "size": 14128,
       "needs": [
         "python3",
         "git"

@@ -22,7 +22,7 @@ the ones worth reading if you are writing your own:
 | | |
 |---|---|
 | [`files`](plugins/files) | A tree of the project pinned down the left, collapsed with the key that opened it. The example of a plugin changing the editor's **shape** — `"dock": "left"` in the manifest is the whole of the difference. |
-| [`rebase`](plugins/rebase) | `git rebase -i` as a panel of your commits instead of a todo file. Sets verbs, reorders, and runs the rebase by being the `GIT_SEQUENCE_EDITOR` git asks for. |
+| [`rebase`](plugins/rebase) | `git rebase -i` where the plan is a **buffer**, with the commit under the cursor as a diff beside it, the plan checked in the margin on save, and a `continue` that stages what you resolved. The example of a plugin that makes textfold the editor another program asks for. |
 | [`zig`](plugins/zig) | A language textfold has never heard of, colours and all, from a tree-sitter grammar compiled on your machine. No change to the editor. |
 | [`cargo`](plugins/cargo) | Build, check, test and clippy without leaving the editor. About a hundred lines of Python, and reading all of it is the point — it is every part of talking to textfold, done by hand, with no library in the way. |
 | [`copilot`](plugins/copilot) | GitHub Copilot: inline suggestions bridged to the language server GitHub ships, and a chat panel. Between them the five use every part of the plugin interface there is. |
