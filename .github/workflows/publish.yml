@@ -1,0 +1,50 @@
+name: publish
+on:
+  push:
+    branches: [main]
+
+# The push at the end of this has to be allowed to happen.
+permissions:
+  contents: write
+
+# Two commits landing close together would otherwise build at the same time,
+# and the second job's push would be rejected for being behind. One at a time,
+# in the order they arrived.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  index-and-tarballs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # Building here rather than on whichever machine edited the manifest is
+      # only safe because build.py keeps a tarball whose *contents* have not
+      # changed, bytes and all. A runner's zlib does not compress the way a
+      # laptop's does, and without that rule every plugin would be republished
+      # every time this ran. See `settle` and `contents` in build.py.
+      #
+      # It also refuses to write anything at all for a manifest that is wrong,
+      # so a bad plugin stops here rather than being published.
+      - run: ./build.py
+
+      - name: commit what changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A index.json dist
+          # Most pushes here touch no manifest, or were built by hand before
+          # being pushed. Nothing to say about either.
+          if git diff --cached --quiet; then
+            echo "index.json and dist/ were already up to date"
+            exit 0
+          fi
+          git commit -m "Rebuild index.json and dist/ for what the plugins now say"
+          # A push made with GITHUB_TOKEN starts no further workflow run, so
+          # this does not come back round to itself.
+          git push

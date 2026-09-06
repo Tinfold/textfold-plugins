@@ -10,9 +10,11 @@ repository.
     ./build.py            write index.json and dist/
     ./build.py --check    say whether they are up to date, and change nothing
 
-The second is what a CI job runs, so that a plugin edited without rebuilding
-is caught in the pull request rather than by somebody's editor failing to
-find a version that was never published.
+The first is what CI runs on `main`, committing whatever it changed, so that
+a plugin edited without rebuilding is published anyway rather than showing up
+as an editor that cannot find a version nobody ever wrote. The second changes
+nothing and is for asking — before a push, or in a fork that publishes itself
+some other way.
 """
 
 import argparse

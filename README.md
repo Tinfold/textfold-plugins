@@ -282,5 +282,16 @@ serving this repository needs nothing but somewhere to put files.
 
 The tarballs are byte-for-byte reproducible — no timestamps, no ownership — so
 a rebuild that changed nothing changes no files, and a digest in the index
-means what it says. CI runs `--check`, which is what catches a plugin edited
-without being rebuilt.
+means what it says.
+
+Neither has to be built by hand. CI builds on `main` and commits whatever it
+changed, so a plugin edited without being rebuilt is published anyway rather
+than turning up as an editor that cannot find a version nobody ever wrote.
+Building before you push is still fine — the job then finds nothing to do. A
+pull request runs the build and throws it away, which is how a manifest that
+is wrong is refused before it is merged rather than after.
+
+What is safe about rebuilding somewhere else is that a tarball whose
+*contents* have not changed is left alone, bytes and all. A runner's zlib does
+not compress the way a laptop's does, and comparing the compression rather
+than the files would republish every plugin every time the machine changed.

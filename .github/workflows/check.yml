@@ -1,14 +1,24 @@
 name: check
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    # main builds and commits instead; see publish.yml.
+    branches-ignore: [main]
 jobs:
-  index-is-up-to-date:
+  the-manifests-say-what-they-have-to:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      # A plugin edited without rebuilding is a version nobody published,
-      # which shows up as an editor that cannot find an update it was told
-      # about. Better to catch it here.
-      - run: ./build.py --check
+      # A build, thrown away. What is being asked is whether build.py will
+      # write anything at all: a manifest with no version, two plugins with
+      # the same id, or a language server that does not say what it needs are
+      # all refusals, and they should be refusals in the pull request.
+      #
+      # Whether index.json is up to date is no longer one of the questions.
+      # Nobody has to remember to rebuild before pushing — publish.yml does it
+      # on main once this is merged, and rebuilding by hand first only means
+      # it finds nothing to do.
+      - run: ./build.py
